@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+from channel_context import ChannelContext
 from enum import Enum
 
 class SecondRoll(Enum):
