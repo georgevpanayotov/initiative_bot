@@ -19,6 +19,9 @@ class ChannelContext:
             return ChannelContext(channelId, {})
 
     def admin(self):
+        if not ADMIN_KEY in self.config:
+            return None
+
         return self.config[ADMIN_KEY]
 
     def setAdmin(self, userId):
@@ -26,9 +29,15 @@ class ChannelContext:
         self._saveConfig()
 
     def everyoneId(self):
+        if not EVERYONE_KEY in self.config:
+            return None
+
         return self.config[EVERYONE_KEY]
 
     def getUserId(self, character):
+        if not USER_RECORDS_KEY in self.config:
+            return None
+
         for userRecord in self.config[USER_RECORDS_KEY]:
             if userRecord[CHARACTER_KEY] == character:
                 return userRecord[USER_ID]
@@ -37,6 +46,9 @@ class ChannelContext:
 
 
     def getCharacter(self, userId):
+        if not USER_RECORDS_KEY in self.config:
+            return None
+
         for userRecord in self.config[USER_RECORDS_KEY]:
             if userRecord[USER_ID] == userId:
                 return userRecord[CHARACTER_KEY]
@@ -44,6 +56,9 @@ class ChannelContext:
         return None
 
     def setCharacter(self, userId, character):
+        if not USER_RECORDS_KEY in self.config:
+            self.config[USER_RECORDS_KEY] = []
+
         for userRecord in self.config[USER_RECORDS_KEY]:
             if userRecord[USER_ID] == userId:
                 userRecord[CHARACTER_KEY] = character
