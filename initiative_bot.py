@@ -5,19 +5,10 @@ import os
 import re
 
 from discord import Intents
-
-NUMBER_MAP = {
-    "one" : "1",
-    "two" : "2",
-    "three" : "3",
-    "four" : "4",
-    "five" : "5",
-    "six" : "6",
-    "seven" : "7",
-    "eight" : "8",
-    "nine" : "9",
-    "zero" : "0",
-}
+from parsing import parseNumbers
+from roll_model import Roll
+from roll_model import RollingRound
+from roll_model import SecondRoll
 
 intents = Intents.default()
 intents.messages = True
@@ -25,13 +16,7 @@ intents.message_content = True
 
 client = discord.Client(intents = intents)
 
-class Roll:
-    def __init__(self, name, value):
-        self.name = name
-        self.value = value
-
-rolling = False
-rolls = {}
+rounds = {}
 
 @client.event
 async def on_ready():
@@ -42,7 +27,7 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    global rolls
+    global rounds
 
     if len(message.embeds) > 0:
         embed = message.embeds[0]
@@ -50,61 +35,111 @@ async def on_message(message):
         matchInitiative = re.compile("Initiative\([+-]?(\d*)\)")
 
         if matchInitiative.match(embed.title) is not None:
+            if not message.channel.id in rounds:
+                print("Channel not currently rolling.")
+                return
+
+            currentRound = rounds[message.channel.id]
+
             for field in embed.fields:
                 number = parseNumbers(field.name)
-                if number is not None and not embed.author.name in rolls:
-                    rolls[embed.author.name] = Roll(embed.author.name, int(number))
-                    print("Roll: " + number + " for " + embed.author.name)
-                else:
-                    print("Rejected Roll: " + field.name + " for " + embed.author.name)
+
+                if number is None:
+                    # No roll here ignore the rest of this field.
+                    continue
+
+                handleRoll(currentRound, embed, number)
+
     else:
         if message.content == "/initiative":
-            rolls = {}
-            rolling = True
-            await message.channel.send("Everyone should roll initiative.")
-        if message.content == "/get_initiative":
+            # Initialize a rolling round.
+            currentRound = RollingRound(message.channel.id)
+            rounds[message.channel.id] = currentRound
+
+            if currentRound.context.admin() is None:
+                currentRound.mommyId = message.author.id
+                await message.channel.send("No admin found. Are you my mommy?")
+            else:
+                everyone = currentRound.context.everyoneId()
+                await message.channel.send(f"<@&{everyone}> should roll initiative.")
+        elif message.content == "/initiative yes":
+            if not message.channel.id in rounds:
+                print("Channel not currently rolling.")
+                return
+
+            currentRound = rounds[message.channel.id]
+            if currentRound.mommyId is None:
+                return
+
+            if currentRound.mommyId == message.author.id:
+                currentRound.mommyId = None
+                currentRound.context.setAdmin(message.author.id)
+            else:
+                await message.channel.send(f"I didn't ask you!")
+        elif message.content.startswith("/initiative I am"):
+            if not message.channel.id in rounds:
+                print("Channel not currently rolling.")
+                return
+
+            currentRound = rounds[message.channel.id]
+            parts = message.content.split(" ")
+            # TODO: tolower character
+            print(parts[3] + " is " + message.author.id)
+            currentRound.context.setCharacter(message.author.id, parts[3])
+        elif message.content.startswith("/initiative advantage"):
+            if not message.author.id in currentRound.rolls:
+                print("No roll for " + message.author.id + " yet")
+                return
+            # TODO: Get character name here:
+            roll = currentRound.rolls[message.author.id]
+            roll.secondRoll = SecondRoll.ADVANTAGE
+        elif message.content.startswith("/initiative disadvantage"):
+            if not message.author.id in currentRound.rolls:
+                print("No roll for " + message.author.id + " yet")
+                return
+            # TODO: Get character name here:
+            roll = currentRound.rolls[message.author.id]
+            roll.secondRoll = SecondRoll.DISADVANTAGE
+        elif message.content == "/initiative get":
+            if not message.channel.id in rounds:
+                print("Channel not currently rolling.")
+                return
+
+            currentRound = rounds[message.channel.id]
+
             response = ""
-            for i, roll in enumerate(sorted(rolls.values(), key = lambda roll: roll.value, reverse = True)):
+            for i, roll in enumerate(sorted(currentRound.rolls.values(), key = lambda roll: roll.value, reverse = True)):
                 response = response + roll.name + " got " + str(roll.value)
-                if i != len(rolls) - 1:
+                if i != len(currentRound.rolls) - 1:
                     response = response + "\n"
 
-            rolls = {}
-            rolling = False
+            del rounds[message.channel.id]
 
             if len(response) == 0:
                 return
             await message.channel.send(response)
 
 
+def handleRoll(currentRound, embed, number):
+    # TODO: Just first name of character. Tolower()
+    author = embed.author.name
 
-def parseNumbers(rollTitle):
-    numStr = ""
-    done = False
-    i = 0
-    while not done:
-        if rollTitle[i] == ":":
-            number = ""
-            i = i + 1
-            if i >= len(rollTitle):
-                print("Error: unmatched ':'")
-                return None
+    if not author in currentRound.rolls:
+        currentRound.rolls[author] = Roll(author, int(number))
+        print("Roll: " + number + " for " + author)
+    else:
+        roll = currentRound.rolls[author]
+        if roll.secondRoll is None:
+            print("Rejected Roll: " + str(number) + " for " + author)
+        elif roll.secondRoll == SecondRoll.ADVANTAGE:
+            if number > roll.value:
+                roll.value = number
+                print("Updated roll: " + str(number) + " for " + author + " due to advantage")
+        elif roll.secondRoll == SecondRoll.DISADVANTAGE:
+            if number < roll.value:
+                roll.value = number
+                print("Updated roll: " + str(number) + " for " + author + " due to disadvantage")
 
-            while rollTitle[i] != ":":
-                number = number + rollTitle[i]
-                i = i + 1
-                if i >= len(rollTitle):
-                    print("Error: unmatched ':'")
-                    return None
-
-            i = i + 1
-            if i >= len(rollTitle):
-                done = True
-            numStr = numStr + NUMBER_MAP[number]
-        else:
-            done = True
-
-    return numStr if len(numStr) > 0 else None
 
 with open('auth/token', mode='r') as tokenFile:
     client.run(tokenFile.read())
