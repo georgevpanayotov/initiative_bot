@@ -106,6 +106,9 @@ async def on_message(message):
                 return
 
             currentRound = rounds[message.channel.id]
+            if message.author.id != currentRound.context.admin():
+                await message.channel.send("Only admin can do that.")
+                return
 
             response = ""
             for i, roll in enumerate(sorted(currentRound.rolls.values(), key = lambda roll: roll.value, reverse = True)):
