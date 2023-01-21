@@ -21,4 +21,4 @@ class RollingRound:
     def __init__(self, channelId):
         self.context = ChannelContext.load(channelId)
         self.rolls = {}
-        self.mommyId = None
+        self.maybeAdmin = None

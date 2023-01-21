@@ -57,8 +57,8 @@ async def on_message(message):
             rounds[message.channel.id] = currentRound
 
             if currentRound.context.admin() is None:
-                currentRound.mommyId = message.author.id
-                await message.channel.send("No admin found. Are you my mommy?")
+                currentRound.maybeAdmin = message.author.id
+                await message.channel.send("No admin found. Are you the admin?")
             else:
                 everyone = currentRound.context.everyoneId()
                 await message.channel.send(f"<@&{everyone}> should roll initiative.")
@@ -68,11 +68,11 @@ async def on_message(message):
                 return
 
             currentRound = rounds[message.channel.id]
-            if currentRound.mommyId is None:
+            if currentRound.maybeAdmin is None:
                 return
 
-            if currentRound.mommyId == message.author.id:
-                currentRound.mommyId = None
+            if currentRound.maybeAdmin == message.author.id:
+                currentRound.maybeAdmin = None
                 currentRound.context.setAdmin(message.author.id)
             else:
                 await message.channel.send(f"I didn't ask you!")
