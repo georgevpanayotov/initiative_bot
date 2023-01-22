@@ -22,4 +22,5 @@ class RollingRound:
     def __init__(self, channelTag, channelId):
         self.context = ChannelContext.load(channelTag, channelId)
         self.playerRolls = {}
+        self.npcRolls = []
         self.maybeAdmin = None

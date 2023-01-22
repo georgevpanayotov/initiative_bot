@@ -119,23 +119,46 @@ async def on_message(message):
                 await message.channel.send("Only admin can do that.")
                 return
 
+            allRolls = []
+            allRolls.extend(currentRound.playerRolls.values())
+            allRolls.extend(currentRound.npcRolls)
+
             response = ""
-            for i, roll in enumerate(sorted(currentRound.playerRolls.values(),
+            for i, roll in enumerate(sorted(allRolls,
                                             key = lambda roll: roll.value,
                                             reverse = True)):
                 response = response + roll.name + " got " + str(roll.value)
-                if i != len(currentRound.playerRolls) - 1:
+                if i != len(allRolls) - 1:
                     response = response + "\n"
 
             del rounds[message.channel.id]
 
             if len(response) == 0:
                 return
-            getLogger().info("[{channelTag}] Summary done.")
+            getLogger().info(f"[{channelTag}] Summary done.")
             await message.channel.send(response)
 
 
 def handleRoll(channelTag, currentRound, embed, number):
+    characterName = embed.author.name
+    characterKey = characterName.split(" ")[0].strip().lower()
+
+    userId = currentRound.context.getUserId(characterKey)
+
+    if userId is not None:
+        handlePlayerRoll(channelTag, currentRound, embed, number)
+    else:
+        handleNpcRoll(channelTag, currentRound, embed, number)
+
+
+def handleNpcRoll(channelTag, currentRound, embed, number):
+    characterName = embed.author.name
+
+    getLogger().info(f"[{channelTag}] Roll: {number} for NPC {characterName}")
+    currentRound.npcRolls.append(Roll(characterName, number))
+
+
+def handlePlayerRoll(channelTag, currentRound, embed, number):
     characterName = embed.author.name
     characterKey = characterName.split(" ")[0].strip().lower()
 
