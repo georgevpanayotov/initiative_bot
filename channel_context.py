@@ -40,7 +40,7 @@ class ChannelContext:
 
         for userRecord in self.config[USER_RECORDS_KEY]:
             if userRecord[CHARACTER_KEY] == character:
-                return userRecord[USER_ID]
+                return userRecord[USER_ID_KEY]
 
         return None
 
@@ -50,7 +50,7 @@ class ChannelContext:
             return None
 
         for userRecord in self.config[USER_RECORDS_KEY]:
-            if userRecord[USER_ID] == userId:
+            if userRecord[USER_ID_KEY] == userId:
                 return userRecord[CHARACTER_KEY]
 
         return None
@@ -60,7 +60,7 @@ class ChannelContext:
             self.config[USER_RECORDS_KEY] = []
 
         for userRecord in self.config[USER_RECORDS_KEY]:
-            if userRecord[USER_ID] == userId:
+            if userRecord[USER_ID_KEY] == userId:
                 userRecord[CHARACTER_KEY] = character
                 break
         else:
