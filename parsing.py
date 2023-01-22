@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+from logging_config import getLogger
+
 NUMBER_MAP = {
     "one" : "1",
     "two" : "2",
@@ -14,6 +16,7 @@ NUMBER_MAP = {
     "keycap_ten" : "10",
 }
 
+
 def parseNumbers(rollTitle):
     numStr = ""
     done = False
@@ -23,14 +26,14 @@ def parseNumbers(rollTitle):
             number = ""
             i = i + 1
             if i >= len(rollTitle):
-                print("Error: unmatched ':'")
+                getLogger().error("Unmatched ':'")
                 return None
 
             while rollTitle[i] != ":":
                 number = number + rollTitle[i]
                 i = i + 1
                 if i >= len(rollTitle):
-                    print("Error: unmatched ':'")
+                    getLogger().error("Unmatched ':'")
                     return None
 
             i = i + 1

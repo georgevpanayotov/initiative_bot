@@ -1,11 +1,15 @@
 #!/usr/bin/python3
+
 import json
+
+from logging_config import getLogger
 
 CHARACTER_KEY = "character"
 USER_ID_KEY = "user_id"
 USER_RECORDS_KEY = "user_records"
 ADMIN_KEY = "admin"
 EVERYONE_KEY = "everyone"
+
 
 class ChannelContext:
     @staticmethod
@@ -15,7 +19,7 @@ class ChannelContext:
                 config = json.load(config_file)
                 return ChannelContext(channelId, config)
         except FileNotFoundError:
-            print("Creating config.")
+            getLogger().info(f"[{channelId}] Creating config.")
             return ChannelContext(channelId, {})
 
     def admin(self):

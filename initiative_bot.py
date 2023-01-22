@@ -5,6 +5,8 @@ import os
 import re
 
 from discord import Intents
+from logging_config import configure
+from logging_config import getLogger
 from parsing import parseNumbers
 from roll_model import Roll
 from roll_model import RollingRound
@@ -20,7 +22,7 @@ rounds = {}
 
 @client.event
 async def on_ready():
-    print(f"We have logged in as {client.user}")
+    getLogger().info(f"We have logged in as {client.user}")
 
 
 @client.event
@@ -57,8 +59,10 @@ async def on_message(message):
 
             if currentRound.context.admin() is None:
                 currentRound.maybeAdmin = message.author.id
+                getLogger().info(f"[{message.channel.id}] Trying to find admin.")
                 await message.channel.send("No admin found. Are you the admin?")
             else:
+                getLogger().info(f"[{message.channel.id}] Starting round.")
                 everyone = currentRound.context.everyoneId()
                 await message.channel.send(f"<@&{everyone}> should roll initiative.")
         elif message.content == "/initiative yes":
@@ -69,6 +73,7 @@ async def on_message(message):
             if currentRound.maybeAdmin is not None and currentRound.maybeAdmin == message.author.id:
                 currentRound.maybeAdmin = None
                 currentRound.context.setAdmin(message.author.id)
+                getLogger().info(f"[{message.channel.id}] Found admin.")
             else:
                 await message.channel.send(f"I didn't ask you!")
         elif message.content.startswith("/initiative I am"):
@@ -81,7 +86,7 @@ async def on_message(message):
 
             userId = message.author.id
 
-            print(f"{characterKey} is {userId}")
+            getLogger().info(f"[{message.channel.id}] {characterKey} is {userId}")
             currentRound.context.setCharacter(userId, characterKey)
         elif message.content.startswith("/initiative advantage"):
             updateSecondRoll(message, SecondRoll.ADVANTAGE)
@@ -114,31 +119,32 @@ async def on_message(message):
 def handleRoll(currentRound, embed, number):
     characterName = embed.author.name
     characterKey = characterName.split(" ")[0].strip().lower()
+    channelId = currentRound.context.channelId
 
     if not characterKey in currentRound.playerRolls:
         currentRound.playerRolls[characterKey] = Roll(characterName, number)
-        print(f"Roll: {number} for {characterName}")
+        getLogger().info(f"[{channelId}] Roll: {number} for {characterName}")
     else:
         roll = currentRound.playerRolls[characterKey]
         if roll.secondRoll is None:
-            print(f"Rejected Roll: {number} for {characterName}")
+            getLogger().error(f"[{channelId}] Rejected Roll: {number} for {characterName}")
         elif roll.secondRoll == SecondRoll.COMPLETED:
-            print(f"Rejected Second Roll: {number} for {characterName}")
+            getLogger().error(f"[{channelId}] Rejected Second Roll: {number} for {characterName}")
         else:
             if roll.secondRoll == SecondRoll.ADVANTAGE:
                 if number > roll.value:
                     roll.value = number
-                    print(f"Updated roll: {number} for {characterName} due to advantage")
+                    getLogger().info(f"[{channelId}] Updated roll: {number} for {characterName} due to advantage")
             elif roll.secondRoll == SecondRoll.DISADVANTAGE:
                 if number < roll.value:
                     roll.value = number
-                    print(f"Updated roll: {number} for {characterName} due to disadvantage")
+                    getLogger().info(f"[{channelId}] Updated roll: {number} for {characterName} due to disadvantage")
             roll.secondRoll = SecondRoll.COMPLETED
 
 
 def getCurrentRound(message):
     if not message.channel.id in rounds:
-        print("Channel not currently rolling.")
+        getLogger().error(f"[{message.channel.id}] Channel not currently rolling.")
         return None
 
     return rounds[message.channel.id]
@@ -153,21 +159,22 @@ def updateSecondRoll(message, secondRoll):
     characterKey = currentRound.context.getCharacter(userId)
 
     if characterKey is None:
-        print(f"No character for {userId}.")
+        getLogger().error(f"[{message.channel.id}] No character for {userId}.")
         return
 
     if not characterKey in currentRound.playerRolls:
-        print(f"No roll for {characterKey} yet")
+        getLogger().error(f"[{message.channel.id}] No roll for {characterKey} yet")
         return
 
     roll = currentRound.playerRolls[characterKey]
 
     if roll.secondRoll == SecondRoll.COMPLETED:
-        print(f"Already did second roll for {roll.name}")
+        getLogger().error(f"[{message.channel.id}] Already did second roll for {roll.name}")
         return
 
     roll.secondRoll = secondRoll
 
 
 with open('auth/token', mode='r') as tokenFile:
+    configure()
     client.run(tokenFile.read())
