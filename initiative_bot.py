@@ -66,7 +66,7 @@ async def on_message(message):
             if currentRound is None:
                 return
 
-            if currentRound.maybeAdmin is None and currentRound.maybeAdmin == message.author.id:
+            if currentRound.maybeAdmin is not None and currentRound.maybeAdmin == message.author.id:
                 currentRound.maybeAdmin = None
                 currentRound.context.setAdmin(message.author.id)
             else:
