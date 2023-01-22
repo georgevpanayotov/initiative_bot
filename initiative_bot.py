@@ -20,7 +20,7 @@ rounds = {}
 
 @client.event
 async def on_ready():
-    print('We have logged in as {0.user}'.format(client))
+    print(f"We have logged in as {client.user}")
 
 @client.event
 async def on_message(message):
@@ -87,7 +87,7 @@ async def on_message(message):
 
             userId = message.author.id
 
-            print(characterKey + " is " + str(userId))
+            print(f"{characterKey}  is {userId}")
             currentRound.context.setCharacter(userId, characterKey)
         elif message.content.startswith("/initiative advantage"):
             if not message.channel.id in rounds:
@@ -104,7 +104,7 @@ async def on_message(message):
                 return
 
             if not characterKey in currentRound.playerRolls:
-                print("No roll for " + characterKey + " yet")
+                print(f"No roll for {characterKey} yet")
                 return
 
             roll = currentRound.playerRolls[characterKey]
@@ -130,7 +130,7 @@ async def on_message(message):
                 return
 
             if not characterKey in currentRound.playerRolls:
-                print("No roll for " + characterKey + " yet")
+                print(f"No roll for {characterKey} yet")
                 return
 
             roll = currentRound.playerRolls[characterKey]
@@ -152,7 +152,9 @@ async def on_message(message):
                 return
 
             response = ""
-            for i, roll in enumerate(sorted(currentRound.playerRolls.values(), key = lambda roll: roll.value, reverse = True)):
+            for i, roll in enumerate(sorted(currentRound.playerRolls.values(),
+                                            key = lambda roll: roll.value,
+                                            reverse = True)):
                 response = response + roll.name + " got " + str(roll.value)
                 if i != len(currentRound.playerRolls) - 1:
                     response = response + "\n"
@@ -170,22 +172,22 @@ def handleRoll(currentRound, embed, number):
 
     if not characterKey in currentRound.playerRolls:
         currentRound.playerRolls[characterKey] = Roll(characterName, number)
-        print("Roll: " + str(number) + " for " + characterName)
+        print(f"Roll: {number} for {characterName}")
     else:
         roll = currentRound.playerRolls[characterKey]
         if roll.secondRoll is None:
-            print("Rejected Roll: " + str(number) + " for " + characterName)
+            print(f"Rejected Roll: {number} for {characterName}")
         elif roll.secondRoll == SecondRoll.COMPLETED:
-            print("Rejected Second Roll: " + str(number) + " for " + characterName)
+            print(f"Rejected Second Roll: {number} for {characterName}")
         else:
             if roll.secondRoll == SecondRoll.ADVANTAGE:
                 if number > roll.value:
                     roll.value = number
-                    print("Updated roll: " + str(number) + " for " + characterName + " due to advantage")
+                    print(f"Updated roll: {number} for {characterName} due to advantage")
             elif roll.secondRoll == SecondRoll.DISADVANTAGE:
                 if number < roll.value:
                     roll.value = number
-                print("Updated roll: " + str(number) + " for " + characterName + " due to disadvantage")
+                print(f"Updated roll: {number} for {characterName} due to disadvantage")
             roll.secondRoll = SecondRoll.COMPLETED
 
 with open('auth/token', mode='r') as tokenFile:
