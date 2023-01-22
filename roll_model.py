@@ -19,7 +19,7 @@ class Roll:
 
 # Represents a round of rolling for initiative.
 class RollingRound:
-    def __init__(self, channelId):
-        self.context = ChannelContext.load(channelId)
+    def __init__(self, channelTag, channelId):
+        self.context = ChannelContext.load(channelTag, channelId)
         self.playerRolls = {}
         self.maybeAdmin = None

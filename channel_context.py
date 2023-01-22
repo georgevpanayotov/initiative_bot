@@ -13,13 +13,13 @@ EVERYONE_KEY = "everyone"
 
 class ChannelContext:
     @staticmethod
-    def load(channelId):
+    def load(channelTag, channelId):
         try:
             with open(ChannelContext._getConfigFile(channelId)) as config_file:
                 config = json.load(config_file)
                 return ChannelContext(channelId, config)
         except FileNotFoundError:
-            getLogger().info(f"[{channelId}] Creating config.")
+            getLogger().info(f"[{channelTag}] Creating config.")
             return ChannelContext(channelId, {})
 
     def admin(self):
