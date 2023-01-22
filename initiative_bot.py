@@ -11,6 +11,7 @@ from parsing import parseNumbers
 from roll_model import Roll
 from roll_model import RollingRound
 from roll_model import SecondRoll
+from channel_context import ChannelContext
 
 intents = Intents.default()
 intents.messages = True
@@ -84,9 +85,11 @@ async def on_message(message):
             else:
                 await message.channel.send(f"I didn't ask you!")
         elif message.content.startswith("/initiative I am"):
-            currentRound = getCurrentRound(message)
+            currentRound = getCurrentRound(message, True)
             if currentRound is None:
-                return
+                context = ChannelContext.load(channelTag, message.channel.id)
+            else:
+                context = currentRound.context
 
             parts = message.content.split(" ")
             characterKey = parts[3].strip().lower()
@@ -94,7 +97,7 @@ async def on_message(message):
             userId = message.author.id
 
             getLogger().info(f"[{channelTag}] {characterKey} is {message.author.name} ({userId})")
-            currentRound.context.setCharacter(userId, characterKey)
+            context.setCharacter(userId, characterKey)
         elif message.content.startswith("/initiative advantage"):
             updateSecondRoll(message, SecondRoll.ADVANTAGE)
         elif message.content.startswith("/initiative disadvantage"):
@@ -150,9 +153,10 @@ def handleRoll(channelTag, currentRound, embed, number):
             roll.secondRoll = SecondRoll.COMPLETED
 
 
-def getCurrentRound(message):
+def getCurrentRound(message, quiet = False):
     if not message.channel.id in rounds:
-        getLogger().error(f"[{getChannelTag(message.channel)}] Channel not currently rolling.")
+        if not quiet:
+            getLogger().error(f"[{getChannelTag(message.channel)}] Channel not currently rolling.")
         return None
 
     return rounds[message.channel.id]
