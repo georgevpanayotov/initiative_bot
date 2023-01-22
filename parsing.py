@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+import re
+
 from logging_config import getLogger
 
 NUMBER_MAP = {
@@ -44,3 +46,20 @@ def parseNumbers(rollTitle):
             done = True
 
     return int(numStr) if len(numStr) > 0 else None
+
+
+def parseCrossedOut(rollTitle):
+    matchCrossedOut = re.compile("~~(\d*)~~")
+    matches = matchCrossedOut.match(rollTitle)
+    if matches is None:
+        return None
+    else:
+        return int(matches.group(1))
+
+
+def parseEither(rollTitle):
+    number = parseNumbers(rollTitle)
+    if number is not None:
+        return number
+
+    return parseCrossedOut(rollTitle)
