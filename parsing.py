@@ -11,6 +11,7 @@ NUMBER_MAP = {
     "eight" : "8",
     "nine" : "9",
     "zero" : "0",
+    "keycap_ten" : "10",
 }
 
 def parseNumbers(rollTitle):
