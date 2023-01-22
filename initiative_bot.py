@@ -46,6 +46,10 @@ async def on_message(message):
             if currentRound is None:
                 return
 
+            if currentRound.context.admin() is None:
+                getLogger().error(f"[{channelTag}] Roll ignored before admin chosen.")
+                return
+
             for field in embed.fields:
                 number = parseNumbers(field.name)
 
@@ -82,6 +86,9 @@ async def on_message(message):
                 currentRound.maybeAdmin = None
                 currentRound.context.setAdmin(message.author.id)
                 getLogger().info(f"[{channelTag}] Found admin.")
+
+                # Reset so that admin has to request rolling again.
+                del rounds[message.channel.id]
             else:
                 await message.channel.send(f"I didn't ask you!")
         elif message.content.startswith("/initiative I am"):
