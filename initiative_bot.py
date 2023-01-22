@@ -83,23 +83,64 @@ async def on_message(message):
 
             currentRound = rounds[message.channel.id]
             parts = message.content.split(" ")
-            # TODO: tolower character
-            print(parts[3] + " is " + message.author.id)
-            currentRound.context.setCharacter(message.author.id, parts[3])
+            characterKey = parts[3].strip().lower()
+
+            userId = message.author.id
+
+            print(characterKey + " is " + str(userId))
+            currentRound.context.setCharacter(userId, characterKey)
         elif message.content.startswith("/initiative advantage"):
-            if not message.author.id in currentRound.rolls:
-                print("No roll for " + message.author.id + " yet")
+            if not message.channel.id in rounds:
+                print("Channel not currently rolling.")
                 return
-            # TODO: Get character name here:
-            roll = currentRound.rolls[message.author.id]
+
+            currentRound = rounds[message.channel.id]
+
+            userId = message.author.id
+            characterKey = currentRound.context.getCharacter(userId)
+
+            if characterKey is None:
+                print(f"No character for {userId}.")
+                return
+
+            if not characterKey in currentRound.rolls:
+                print("No roll for " + characterKey + " yet")
+                return
+
+            roll = currentRound.rolls[characterKey]
+
+            if roll.secondRoll == SecondRoll.COMPLETED:
+                print(f"Already did second roll for {roll.name}")
+                return
+
             roll.secondRoll = SecondRoll.ADVANTAGE
+
         elif message.content.startswith("/initiative disadvantage"):
-            if not message.author.id in currentRound.rolls:
-                print("No roll for " + message.author.id + " yet")
+            if not message.channel.id in rounds:
+                print("Channel not currently rolling.")
                 return
-            # TODO: Get character name here:
-            roll = currentRound.rolls[message.author.id]
+
+            currentRound = rounds[message.channel.id]
+
+            userId = message.author.id
+            characterKey = currentRound.context.getCharacter(userId)
+
+            if characterKey is None:
+                print(f"No character for {userId}.")
+                return
+
+            if not characterKey in currentRound.rolls:
+                print("No roll for " + characterKey + " yet")
+                return
+
+            roll = currentRound.rolls[characterKey]
+
+            if roll.secondRoll == SecondRoll.COMPLETED:
+                print(f"Already did second roll for {roll.name}")
+                return
+
             roll.secondRoll = SecondRoll.DISADVANTAGE
+
         elif message.content == "/initiative get":
             if not message.channel.id in rounds:
                 print("Channel not currently rolling.")
@@ -124,25 +165,28 @@ async def on_message(message):
 
 
 def handleRoll(currentRound, embed, number):
-    # TODO: Just first name of character. Tolower()
-    author = embed.author.name
+    characterName = embed.author.name
+    characterKey = characterName.split(" ")[0].strip().lower()
 
-    if not author in currentRound.rolls:
-        currentRound.rolls[author] = Roll(author, int(number))
-        print("Roll: " + number + " for " + author)
+    if not characterKey in currentRound.rolls:
+        currentRound.rolls[characterKey] = Roll(characterName, number)
+        print("Roll: " + str(number) + " for " + characterName)
     else:
-        roll = currentRound.rolls[author]
+        roll = currentRound.rolls[characterKey]
         if roll.secondRoll is None:
-            print("Rejected Roll: " + str(number) + " for " + author)
-        elif roll.secondRoll == SecondRoll.ADVANTAGE:
-            if number > roll.value:
-                roll.value = number
-                print("Updated roll: " + str(number) + " for " + author + " due to advantage")
-        elif roll.secondRoll == SecondRoll.DISADVANTAGE:
-            if number < roll.value:
-                roll.value = number
-                print("Updated roll: " + str(number) + " for " + author + " due to disadvantage")
-
+            print("Rejected Roll: " + str(number) + " for " + characterName)
+        elif roll.secondRoll == SecondRoll.COMPLETED:
+            print("Rejected Second Roll: " + str(number) + " for " + characterName)
+        else:
+            if roll.secondRoll == SecondRoll.ADVANTAGE:
+                if number > roll.value:
+                    roll.value = number
+                    print("Updated roll: " + str(number) + " for " + characterName + " due to advantage")
+            elif roll.secondRoll == SecondRoll.DISADVANTAGE:
+                if number < roll.value:
+                    roll.value = number
+                print("Updated roll: " + str(number) + " for " + characterName + " due to disadvantage")
+            roll.secondRoll = COMPLETED
 
 with open('auth/token', mode='r') as tokenFile:
     client.run(tokenFile.read())

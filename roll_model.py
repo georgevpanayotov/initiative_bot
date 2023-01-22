@@ -5,7 +5,8 @@ from enum import Enum
 
 class SecondRoll(Enum):
     ADVANTAGE = 1
-    DISADVANTAGE = 1
+    DISADVANTAGE = 2
+    COMPLETED = 3
 
 class Roll:
     def __init__(self, name, value):

@@ -39,4 +39,4 @@ def parseNumbers(rollTitle):
         else:
             done = True
 
-    return numStr if len(numStr) > 0 else None
+    return int(numStr) if len(numStr) > 0 else None
