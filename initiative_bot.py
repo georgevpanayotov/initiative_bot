@@ -22,6 +22,7 @@ rounds = {}
 async def on_ready():
     print(f"We have logged in as {client.user}")
 
+
 @client.event
 async def on_message(message):
     if message.author == client.user:
@@ -35,11 +36,9 @@ async def on_message(message):
         matchInitiative = re.compile("Initiative\([+-]?(\d*)\)")
 
         if matchInitiative.match(embed.title) is not None:
-            if not message.channel.id in rounds:
-                print("Channel not currently rolling.")
+            currentRound = getCurrentRound(message)
+            if currentRound is None:
                 return
-
-            currentRound = rounds[message.channel.id]
 
             for field in embed.fields:
                 number = parseNumbers(field.name)
@@ -63,90 +62,36 @@ async def on_message(message):
                 everyone = currentRound.context.everyoneId()
                 await message.channel.send(f"<@&{everyone}> should roll initiative.")
         elif message.content == "/initiative yes":
-            if not message.channel.id in rounds:
-                print("Channel not currently rolling.")
+            currentRound = getCurrentRound(message)
+            if currentRound is None:
                 return
 
-            currentRound = rounds[message.channel.id]
-            if currentRound.maybeAdmin is None:
-                return
-
-            if currentRound.maybeAdmin == message.author.id:
+            if currentRound.maybeAdmin is None and currentRound.maybeAdmin == message.author.id:
                 currentRound.maybeAdmin = None
                 currentRound.context.setAdmin(message.author.id)
             else:
                 await message.channel.send(f"I didn't ask you!")
         elif message.content.startswith("/initiative I am"):
-            if not message.channel.id in rounds:
-                print("Channel not currently rolling.")
+            currentRound = getCurrentRound(message)
+            if currentRound is None:
                 return
 
-            currentRound = rounds[message.channel.id]
             parts = message.content.split(" ")
             characterKey = parts[3].strip().lower()
 
             userId = message.author.id
 
-            print(f"{characterKey}  is {userId}")
+            print(f"{characterKey} is {userId}")
             currentRound.context.setCharacter(userId, characterKey)
         elif message.content.startswith("/initiative advantage"):
-            if not message.channel.id in rounds:
-                print("Channel not currently rolling.")
-                return
-
-            currentRound = rounds[message.channel.id]
-
-            userId = message.author.id
-            characterKey = currentRound.context.getCharacter(userId)
-
-            if characterKey is None:
-                print(f"No character for {userId}.")
-                return
-
-            if not characterKey in currentRound.playerRolls:
-                print(f"No roll for {characterKey} yet")
-                return
-
-            roll = currentRound.playerRolls[characterKey]
-
-            if roll.secondRoll == SecondRoll.COMPLETED:
-                print(f"Already did second roll for {roll.name}")
-                return
-
-            roll.secondRoll = SecondRoll.ADVANTAGE
-
+            updateSecondRoll(message, SecondRoll.ADVANTAGE)
         elif message.content.startswith("/initiative disadvantage"):
-            if not message.channel.id in rounds:
-                print("Channel not currently rolling.")
-                return
-
-            currentRound = rounds[message.channel.id]
-
-            userId = message.author.id
-            characterKey = currentRound.context.getCharacter(userId)
-
-            if characterKey is None:
-                print(f"No character for {userId}.")
-                return
-
-            if not characterKey in currentRound.playerRolls:
-                print(f"No roll for {characterKey} yet")
-                return
-
-            roll = currentRound.playerRolls[characterKey]
-
-            if roll.secondRoll == SecondRoll.COMPLETED:
-                print(f"Already did second roll for {roll.name}")
-                return
-
-            roll.secondRoll = SecondRoll.DISADVANTAGE
-
+            updateSecondRoll(message, SecondRoll.DISADVANTAGE)
         elif message.content == "/initiative get":
-            if not message.channel.id in rounds:
-                print("Channel not currently rolling.")
+            currentRound = getCurrentRound(message)
+            if currentRound is None:
                 return
 
-            currentRound = rounds[message.channel.id]
             if message.author.id != currentRound.context.admin():
                 await message.channel.send("Only admin can do that.")
                 return
@@ -187,8 +132,42 @@ def handleRoll(currentRound, embed, number):
             elif roll.secondRoll == SecondRoll.DISADVANTAGE:
                 if number < roll.value:
                     roll.value = number
-                print(f"Updated roll: {number} for {characterName} due to disadvantage")
+                    print(f"Updated roll: {number} for {characterName} due to disadvantage")
             roll.secondRoll = SecondRoll.COMPLETED
+
+
+def getCurrentRound(message):
+    if not message.channel.id in rounds:
+        print("Channel not currently rolling.")
+        return None
+
+    return rounds[message.channel.id]
+
+
+def updateSecondRoll(message, secondRoll):
+    currentRound = getCurrentRound(message)
+    if currentRound is None:
+        return
+
+    userId = message.author.id
+    characterKey = currentRound.context.getCharacter(userId)
+
+    if characterKey is None:
+        print(f"No character for {userId}.")
+        return
+
+    if not characterKey in currentRound.playerRolls:
+        print(f"No roll for {characterKey} yet")
+        return
+
+    roll = currentRound.playerRolls[characterKey]
+
+    if roll.secondRoll == SecondRoll.COMPLETED:
+        print(f"Already did second roll for {roll.name}")
+        return
+
+    roll.secondRoll = secondRoll
+
 
 with open('auth/token', mode='r') as tokenFile:
     client.run(tokenFile.read())
