@@ -103,11 +103,11 @@ async def on_message(message):
                 print(f"No character for {userId}.")
                 return
 
-            if not characterKey in currentRound.rolls:
+            if not characterKey in currentRound.playerRolls:
                 print("No roll for " + characterKey + " yet")
                 return
 
-            roll = currentRound.rolls[characterKey]
+            roll = currentRound.playerRolls[characterKey]
 
             if roll.secondRoll == SecondRoll.COMPLETED:
                 print(f"Already did second roll for {roll.name}")
@@ -129,11 +129,11 @@ async def on_message(message):
                 print(f"No character for {userId}.")
                 return
 
-            if not characterKey in currentRound.rolls:
+            if not characterKey in currentRound.playerRolls:
                 print("No roll for " + characterKey + " yet")
                 return
 
-            roll = currentRound.rolls[characterKey]
+            roll = currentRound.playerRolls[characterKey]
 
             if roll.secondRoll == SecondRoll.COMPLETED:
                 print(f"Already did second roll for {roll.name}")
@@ -152,9 +152,9 @@ async def on_message(message):
                 return
 
             response = ""
-            for i, roll in enumerate(sorted(currentRound.rolls.values(), key = lambda roll: roll.value, reverse = True)):
+            for i, roll in enumerate(sorted(currentRound.playerRolls.values(), key = lambda roll: roll.value, reverse = True)):
                 response = response + roll.name + " got " + str(roll.value)
-                if i != len(currentRound.rolls) - 1:
+                if i != len(currentRound.playerRolls) - 1:
                     response = response + "\n"
 
             del rounds[message.channel.id]
@@ -168,11 +168,11 @@ def handleRoll(currentRound, embed, number):
     characterName = embed.author.name
     characterKey = characterName.split(" ")[0].strip().lower()
 
-    if not characterKey in currentRound.rolls:
-        currentRound.rolls[characterKey] = Roll(characterName, number)
+    if not characterKey in currentRound.playerRolls:
+        currentRound.playerRolls[characterKey] = Roll(characterName, number)
         print("Roll: " + str(number) + " for " + characterName)
     else:
-        roll = currentRound.rolls[characterKey]
+        roll = currentRound.playerRolls[characterKey]
         if roll.secondRoll is None:
             print("Rejected Roll: " + str(number) + " for " + characterName)
         elif roll.secondRoll == SecondRoll.COMPLETED:
