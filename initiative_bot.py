@@ -186,7 +186,7 @@ def handleRoll(currentRound, embed, number):
                 if number < roll.value:
                     roll.value = number
                 print("Updated roll: " + str(number) + " for " + characterName + " due to disadvantage")
-            roll.secondRoll = COMPLETED
+            roll.secondRoll = SecondRoll.COMPLETED
 
 with open('auth/token', mode='r') as tokenFile:
     client.run(tokenFile.read())
