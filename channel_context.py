@@ -80,7 +80,7 @@ class ChannelContext:
 
     def _saveConfig(self):
         with open(ChannelContext._getConfigFile(self.channelId), mode="w") as config_file:
-            json.dump(self.config, config_file)
+            json.dump(self.config, config_file, indent=4)
 
     @staticmethod
     def _getConfigFile(channelId):
