@@ -62,7 +62,15 @@ async def on_message(message):
 
             roll = Roll(embed.author.name, number, allNumbers)
 
-            handleRoll(channelTag, currentRound, roll)
+            success = handleRoll(channelTag, currentRound, roll)
+            if not success:
+                userId = currentRound.context.getUserId(roll.key)
+
+                nameToMention = embed.author.name
+                if userId is not None:
+                    nameToMention = f"<@{userId}>"
+
+                await message.channel.send(f"{nameToMention} has already rolled.")
 
     else:
         if message.content == "/initiative":
@@ -73,7 +81,7 @@ async def on_message(message):
             if currentRound.context.admin() is None:
                 currentRound.maybeAdmin = message.author.id
                 getLogger().info(f"[{channelTag}] Trying to find admin.")
-                await message.channel.send("No admin found. Are you the admin?")
+                await message.channel.send(f"No admin found. Are you the admin, <@{message.author.id}>?")
             elif message.author.id == currentRound.context.admin():
                 getLogger().info(f"[{channelTag}] Starting round.")
                 everyone = currentRound.context.everyoneId()
@@ -111,11 +119,17 @@ async def on_message(message):
             getLogger().info(f"[{channelTag}] {characterKey} is {message.author.name} ({userId})")
             context.setCharacter(userId, characterKey)
         elif message.content.startswith("/initiative advantage"):
-            updateSecondRoll(message, SecondRoll.ADVANTAGE)
+            success = updateSecondRoll(message, SecondRoll.ADVANTAGE)
+            if not success:
+                await message.channel.send(f"<@{message.author.id}> hasn't rolled yet.")
         elif message.content.startswith("/initiative disadvantage"):
-            updateSecondRoll(message, SecondRoll.DISADVANTAGE)
+            success = updateSecondRoll(message, SecondRoll.DISADVANTAGE)
+            if not success:
+                await message.channel.send(f"<@{message.author.id}> hasn't rolled yet.")
         elif message.content.startswith("/initiative normal"):
-            normalizeRoll(message)
+            success = normalizeRoll(message)
+            if not success:
+                await message.channel.send(f"<@{message.author.id}> hasn't rolled yet.")
         elif message.content == "/initiative get":
             currentRound = getCurrentRound(message)
             if currentRound is None:
@@ -147,23 +161,23 @@ async def on_message(message):
 
 
 def handleRoll(channelTag, currentRound, roll):
-    characterKey = roll.name.split(" ")[0].strip().lower()
-
-    userId = currentRound.context.getUserId(characterKey)
+    userId = currentRound.context.getUserId(roll.key)
 
     if userId is not None:
-        handlePlayerRoll(channelTag, currentRound, roll)
+        return handlePlayerRoll(channelTag, currentRound, roll)
     else:
-        handleNpcRoll(channelTag, currentRound, roll)
+        return handleNpcRoll(channelTag, currentRound, roll)
 
 
 def handleNpcRoll(channelTag, currentRound, roll):
     getLogger().info(f"[{channelTag}] Roll: {roll.value} for NPC {roll.name}")
     currentRound.npcRolls.append(roll)
 
+    return True
+
 
 def handlePlayerRoll(channelTag, currentRound, newRoll):
-    characterKey = newRoll.name.split(" ")[0].strip().lower()
+    characterKey = newRoll.key
 
     if not characterKey in currentRound.playerRolls:
         currentRound.playerRolls[characterKey] = newRoll
@@ -172,8 +186,10 @@ def handlePlayerRoll(channelTag, currentRound, newRoll):
         roll = currentRound.playerRolls[characterKey]
         if roll.secondRoll is None:
             getLogger().error(f"[{channelTag}] Rejected Roll: {newRoll.value} for {newRoll.name}")
+            return False
         elif roll.secondRoll == SecondRoll.COMPLETED:
             getLogger().error(f"[{channelTag}] Rejected Second Roll: {newRoll.value} for {newRoll.name}")
+            return False
         else:
             if roll.secondRoll == SecondRoll.ADVANTAGE:
                 if newRoll.value > roll.value:
@@ -187,6 +203,7 @@ def handlePlayerRoll(channelTag, currentRound, newRoll):
             roll.allNumbers.append(newRoll.value)
             roll.secondRoll = SecondRoll.COMPLETED
 
+    return True
 
 def getCurrentRound(message, quiet = False):
     if not message.channel.id in rounds:
@@ -200,7 +217,7 @@ def getCurrentRound(message, quiet = False):
 def updateSecondRoll(message, secondRoll):
     currentRound = getCurrentRound(message)
     if currentRound is None:
-        return
+        return False
 
     userId = message.author.id
     characterKey = currentRound.context.getCharacter(userId)
@@ -209,11 +226,11 @@ def updateSecondRoll(message, secondRoll):
 
     if characterKey is None:
         getLogger().error(f"[{channelTag}] No character for {userId}.")
-        return
+        return False
 
     if not characterKey in currentRound.playerRolls:
         getLogger().error(f"[{channelTag}] No roll for {characterKey} yet")
-        return
+        return False
 
     roll = currentRound.playerRolls[characterKey]
 
@@ -228,11 +245,13 @@ def updateSecondRoll(message, secondRoll):
             roll.value = min(roll.allNumbers)
         getLogger().info(f"[{channelTag}] updating {roll.value} for {roll.name} due to {secondRoll}")
 
+    return True
+
 
 def normalizeRoll(message):
     currentRound = getCurrentRound(message)
     if currentRound is None:
-        return
+        return False
 
     userId = message.author.id
     characterKey = currentRound.context.getCharacter(userId)
@@ -241,17 +260,19 @@ def normalizeRoll(message):
 
     if characterKey is None:
         getLogger().error(f"[{channelTag}] No character for {userId}.")
-        return
+        return False
 
     if not characterKey in currentRound.playerRolls:
         getLogger().error(f"[{channelTag}] No roll for {characterKey} yet")
-        return
+        return False
 
     roll = currentRound.playerRolls[characterKey]
     getLogger().info(f"[{channelTag}] Normalizing {roll.value} for {roll.name}.")
 
     # Pick the first roll so it's like we didn't do advantage at all.
     roll.value = roll.allNumbers[0]
+
+    return True
 
 
 def getChannelTag(channel):

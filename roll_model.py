@@ -11,6 +11,7 @@ class SecondRoll(Enum):
 class Roll:
     def __init__(self, name, value, allNumbers):
         self.name = name
+        self.key = self.name.split(" ")[0].strip().lower()
         self.value = value
         # For now, we are just expecting a first roll. This will change if we have to update for
         # advantage.
