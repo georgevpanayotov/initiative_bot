@@ -11,6 +11,7 @@ integration.
     /initiative I am {CHARACTER_NAME}
 ```
 
+* NOTE
     * Use at least your character's first name as it appears in discord
     * This is important so that your character isn't treated as an NPC
     * You can update your roll to handle advantage/disadvantage (see below)
