@@ -5,6 +5,7 @@ import os
 import re
 
 from channel_context import ChannelContext
+from discord import Embed
 from discord import Intents
 from logging_config import configure
 from logging_config import getLogger
@@ -144,20 +145,26 @@ async def on_message(message):
             allRolls.extend(currentRound.playerRolls.values())
             allRolls.extend(currentRound.npcRolls)
 
-            response = ""
+            logSummary = ""
+            response = Embed(title = "Initiative results.")
+            response.set_footer(text = "Initiative bot. A PigeonWorks project.",
+                                icon_url = "https://i.imgur.com/96QEZeU.png")
+            response.colour = discord.Colour.orange()
             for i, roll in enumerate(sorted(allRolls,
                                             key = lambda roll: roll.value,
                                             reverse = True)):
-                response = response + roll.name + " got " + str(roll.value)
-                if i != len(allRolls) - 1:
-                    response = response + "\n"
+                response.add_field(name = roll.name, value = str(roll.value), inline = False)
+                logSummary = logSummary + f"{roll.name}({roll.value}) "
 
             del rounds[message.channel.id]
 
-            if len(response) == 0:
+
+            if len(response.fields) == 0:
+                getLogger().warning(f"[{channelTag}] Summary: no rolls.")
                 return
-            getLogger().info(f"[{channelTag}] Summary done.")
-            await message.channel.send(response)
+
+            getLogger().info(f"[{channelTag}] Summary done: {logSummary}.")
+            await message.channel.send(embed = response)
 
 
 def handleRoll(channelTag, currentRound, roll):
