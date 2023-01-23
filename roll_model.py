@@ -9,12 +9,13 @@ class SecondRoll(Enum):
     COMPLETED = 3
 
 class Roll:
-    def __init__(self, name, value):
+    def __init__(self, name, value, allNumbers):
         self.name = name
         self.value = value
         # For now, we are just expecting a first roll. This will change if we have to update for
         # advantage.
         self.secondRoll = None
+        self.allNumbers = allNumbers
 
 
 # Represents a round of rolling for initiative.
