@@ -86,7 +86,7 @@ async def on_message(message):
             elif message.author.id == currentRound.context.admin():
                 getLogger().info(f"[{channelTag}] Starting round.")
                 everyone = currentRound.context.everyoneId()
-                await message.channel.send(f"<@&{everyone}> should roll initiative.")
+                await message.channel.send(f"<@&{everyone}>, roll for initiative.")
             else:
                 getLogger().error(f"[{channelTag}] Non-admin tried to start a round.")
                 del rounds[message.channel.id]
