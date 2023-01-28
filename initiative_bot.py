@@ -43,7 +43,7 @@ async def on_message(message):
 
         matchInitiative = re.compile("Initiative\([+-]?(\d*)\)")
 
-        if matchInitiative.match(embed.title) is not None:
+        if embed.title is not None and matchInitiative.match(embed.title) is not None:
             currentRound = getCurrentRound(message)
             if currentRound is None:
                 return
