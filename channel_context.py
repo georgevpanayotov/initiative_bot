@@ -18,6 +18,9 @@ class ChannelContext:
         try:
             with open(filename) as config_file:
                 config = json.load(config_file)
+
+                ChannelContext._validateConfig(channelTag, config)
+
                 return ChannelContext(channelId, config)
         except FileNotFoundError:
             getLogger().info(f"[{channelTag}] Creating config.")
@@ -89,6 +92,47 @@ class ChannelContext:
     @staticmethod
     def _getConfigFile(channelId):
         return f".config/channel_{channelId}"
+
+
+    @staticmethod
+    def _validateConfig(channelTag, config):
+        keySet = set(config.keys()) - {EVERYONE_KEY, USER_RECORDS_KEY, ADMIN_KEY}
+        if len(keySet) > 0:
+            getLogger().error(f"[{channelTag}] Unexpected top level keys: {keySet}.")
+            raise ConfigException("Error: Invalid top level config.")
+
+        if EVERYONE_KEY in config:
+            if not isinstance(config[EVERYONE_KEY], int):
+                getLogger().error(f"[{channelTag}] Everyone user id must be an int.")
+                raise ConfigException("Error: Invalid `everyone` config.")
+
+        if ADMIN_KEY in config:
+            if not isinstance(config[ADMIN_KEY], int):
+                getLogger().error(f"[{channelTag}] Admin user id must be an int.")
+                raise ConfigException("Error: Invalid `admin` config.")
+
+        if USER_RECORDS_KEY in config:
+            records = config[USER_RECORDS_KEY]
+            if not isinstance(records, list):
+                getLogger().error(f"[{channelTag}] User records must be a list.")
+                raise ConfigException("Error: Invalid `user records` config.")
+
+            for i, record in enumerate(records):
+                if not isinstance(record, dict):
+                    getLogger().error(f"[{channelTag}] User record {i + 1} must be a dict.")
+                    raise ConfigException("Error: Invalid `user record` config.")
+
+                if not set(record.keys()) == {USER_ID_KEY, CHARACTER_KEY}:
+                    getLogger().error(f"[{channelTag}] Invalid keys in user record {i + 1}: {record.keys()}.")
+                    raise ConfigException("Error: Invalid `user record` keys in config.")
+
+                if not isinstance(record[CHARACTER_KEY], str):
+                    getLogger().error(f"[{channelTag}] Character name for user record {i + 1} must be string.")
+                    raise ConfigException("Error: Invalid character name in config.")
+
+                if not isinstance(record[USER_ID_KEY], int):
+                    getLogger().error(f"[{channelTag}] User id for user record {i + 1} must be int.")
+                    raise ConfigException("Error: Invalid user id in config.")
 
 
 class ConfigException(Exception):
