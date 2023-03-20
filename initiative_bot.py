@@ -5,6 +5,7 @@ import os
 import re
 
 from channel_context import ChannelContext
+from channel_context import ConfigException
 from discord import Embed
 from discord import Intents
 from logging_config import configure
@@ -76,7 +77,12 @@ async def on_message(message):
     else:
         if message.content == "/initiative":
             # Initialize a rolling round.
-            currentRound = RollingRound(channelTag, message.channel.id)
+            try:
+                currentRound = RollingRound(channelTag, message.channel.id)
+            except ConfigException as e:
+                await message.channel.send(str(e))
+                return
+
             rounds[message.channel.id] = currentRound
 
             if currentRound.context.admin() is None:
@@ -108,7 +114,11 @@ async def on_message(message):
         elif message.content.startswith("/initiative I am"):
             currentRound = getCurrentRound(message, True)
             if currentRound is None:
-                context = ChannelContext.load(channelTag, message.channel.id)
+                try:
+                    context = ChannelContext.load(channelTag, message.channel.id)
+                except ConfigException as e:
+                    await message.channel.send(str(e))
+                    return
             else:
                 context = currentRound.context
 

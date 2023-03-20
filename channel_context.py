@@ -14,13 +14,17 @@ EVERYONE_KEY = "everyone"
 class ChannelContext:
     @staticmethod
     def load(channelTag, channelId):
+        filename = ChannelContext._getConfigFile(channelId)
         try:
-            with open(ChannelContext._getConfigFile(channelId)) as config_file:
+            with open(filename) as config_file:
                 config = json.load(config_file)
                 return ChannelContext(channelId, config)
         except FileNotFoundError:
             getLogger().info(f"[{channelTag}] Creating config.")
             return ChannelContext(channelId, {})
+        except json.decoder.JSONDecodeError as e:
+            getLogger().error(f"[{channelTag}] {filename}:{e.lineno}:{e.colno}: Malformed config: {e.msg}.")
+            raise ConfigException(f"Error: Malformed config!") from e
 
     def admin(self):
         if not ADMIN_KEY in self.config:
@@ -85,3 +89,7 @@ class ChannelContext:
     @staticmethod
     def _getConfigFile(channelId):
         return f".config/channel_{channelId}"
+
+
+class ConfigException(Exception):
+    pass
