@@ -171,6 +171,9 @@ async def on_message(message):
 
             if len(response.fields) == 0:
                 getLogger().warning(f"[{channelTag}] Summary: no rolls.")
+                response.add_field(name = "Nobody rolled", value = "", inline = False)
+                await message.channel.send(embed = response)
+
                 return
 
             getLogger().info(f"[{channelTag}] Summary done: {logSummary}.")
