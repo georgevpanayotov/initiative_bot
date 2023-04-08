@@ -50,7 +50,7 @@ async def on_message(message):
                 return
 
             if currentRound.context.admin() is None:
-                getLogger().error(f"[{channelTag}] Roll ignored before admin chosen.")
+                getLogger().error(f"{channelTag} Roll ignored before admin chosen.")
                 return
 
             allNumbers = []
@@ -87,14 +87,14 @@ async def on_message(message):
 
             if currentRound.context.admin() is None:
                 currentRound.maybeAdmin = message.author.id
-                getLogger().info(f"[{channelTag}] Trying to find admin.")
+                getLogger().info(f"{channelTag} Trying to find admin.")
                 await message.channel.send(f"No admin found. Are you the admin, <@{message.author.id}>?")
             elif message.author.id == currentRound.context.admin():
-                getLogger().info(f"[{channelTag}] Starting round.")
+                getLogger().info(f"{channelTag} Starting round.")
                 everyone = currentRound.context.everyoneId()
                 await message.channel.send(f"<@&{everyone}>, roll for initiative.")
             else:
-                getLogger().error(f"[{channelTag}] Non-admin tried to start a round.")
+                getLogger().error(f"{channelTag} Non-admin tried to start a round.")
                 del rounds[message.channel.id]
                 await message.channel.send(f"Only admin can do that.")
         elif message.content == "/initiative yes":
@@ -105,7 +105,7 @@ async def on_message(message):
             if currentRound.maybeAdmin is not None and currentRound.maybeAdmin == message.author.id:
                 currentRound.maybeAdmin = None
                 currentRound.context.setAdmin(message.author.id)
-                getLogger().info(f"[{channelTag}] Found admin.")
+                getLogger().info(f"{channelTag} Found admin.")
 
                 # Reset so that admin has to request rolling again.
                 del rounds[message.channel.id]
@@ -127,7 +127,7 @@ async def on_message(message):
 
             userId = message.author.id
 
-            getLogger().info(f"[{channelTag}] {characterKey} is {message.author.name} ({userId})")
+            getLogger().info(f"{channelTag} {characterKey} is {message.author.name} ({userId})")
             context.setCharacter(userId, characterKey)
         elif message.content.startswith("/initiative advantage"):
             success = updateSecondRoll(message, SecondRoll.ADVANTAGE)
@@ -147,7 +147,7 @@ async def on_message(message):
                 return
 
             if message.author.id != currentRound.context.admin():
-                getLogger().error("[{channelTag}] Non admin tried to get summary.")
+                getLogger().error("{channelTag} Non admin tried to get summary.")
                 await message.channel.send("Only admin can do that.")
                 return
 
@@ -170,13 +170,13 @@ async def on_message(message):
 
 
             if len(response.fields) == 0:
-                getLogger().warning(f"[{channelTag}] Summary: no rolls.")
+                getLogger().warning(f"{channelTag} Summary: no rolls.")
                 response.add_field(name = "Nobody rolled", value = "", inline = False)
                 await message.channel.send(embed = response)
 
                 return
 
-            getLogger().info(f"[{channelTag}] Summary done: {logSummary}.")
+            getLogger().info(f"{channelTag} Summary done: {logSummary}.")
             await message.channel.send(embed = response)
 
 
@@ -190,7 +190,7 @@ def handleRoll(channelTag, currentRound, roll):
 
 
 def handleNpcRoll(channelTag, currentRound, roll):
-    getLogger().info(f"[{channelTag}] Roll: {roll.value} for NPC {roll.name}")
+    getLogger().info(f"{channelTag} Roll: {roll.value} for NPC {roll.name}")
     currentRound.npcRolls.append(roll)
 
     return True
@@ -201,24 +201,24 @@ def handlePlayerRoll(channelTag, currentRound, newRoll):
 
     if not characterKey in currentRound.playerRolls:
         currentRound.playerRolls[characterKey] = newRoll
-        getLogger().info(f"[{channelTag}] Roll: {newRoll.value} for {newRoll.name}")
+        getLogger().info(f"{channelTag} Roll: {newRoll.value} for {newRoll.name}")
     else:
         roll = currentRound.playerRolls[characterKey]
         if roll.secondRoll is None:
-            getLogger().error(f"[{channelTag}] Rejected Roll: {newRoll.value} for {newRoll.name}")
+            getLogger().error(f"{channelTag} Rejected Roll: {newRoll.value} for {newRoll.name}")
             return False
         elif roll.secondRoll == SecondRoll.COMPLETED:
-            getLogger().error(f"[{channelTag}] Rejected Second Roll: {newRoll.value} for {newRoll.name}")
+            getLogger().error(f"{channelTag} Rejected Second Roll: {newRoll.value} for {newRoll.name}")
             return False
         else:
             if roll.secondRoll == SecondRoll.ADVANTAGE:
                 if newRoll.value > roll.value:
                     roll.value = newRoll.value
-                    getLogger().info(f"[{channelTag}] Updated roll: {newRoll.value} for {newRoll.name} due to advantage")
+                    getLogger().info(f"{channelTag} Updated roll: {newRoll.value} for {newRoll.name} due to advantage")
             elif roll.secondRoll == SecondRoll.DISADVANTAGE:
                 if newRoll.value < roll.value:
                     roll.value = newRoll.value
-                    getLogger().info(f"[{channelTag}] Updated roll: {newRoll.value} for {newRoll.name} due to disadvantage")
+                    getLogger().info(f"{channelTag} Updated roll: {newRoll.value} for {newRoll.name} due to disadvantage")
 
             roll.allNumbers.append(newRoll.value)
             roll.secondRoll = SecondRoll.COMPLETED
@@ -245,11 +245,11 @@ def updateSecondRoll(message, secondRoll):
     channelTag = getChannelTag(message.channel)
 
     if characterKey is None:
-        getLogger().error(f"[{channelTag}] No character for {userId}.")
+        getLogger().error(f"{channelTag} No character for {userId}.")
         return False
 
     if not characterKey in currentRound.playerRolls:
-        getLogger().error(f"[{channelTag}] No roll for {characterKey} yet")
+        getLogger().error(f"{channelTag} No roll for {characterKey} yet")
         return False
 
     roll = currentRound.playerRolls[characterKey]
@@ -263,7 +263,7 @@ def updateSecondRoll(message, secondRoll):
             roll.value = max(roll.allNumbers)
         elif secondRoll == SecondRoll.DISADVANTAGE:
             roll.value = min(roll.allNumbers)
-        getLogger().info(f"[{channelTag}] updating {roll.value} for {roll.name} due to {secondRoll}")
+        getLogger().info(f"{channelTag} updating {roll.value} for {roll.name} due to {secondRoll}")
 
     return True
 
@@ -279,15 +279,15 @@ def normalizeRoll(message):
     channelTag = getChannelTag(message.channel)
 
     if characterKey is None:
-        getLogger().error(f"[{channelTag}] No character for {userId}.")
+        getLogger().error(f"{channelTag} No character for {userId}.")
         return False
 
     if not characterKey in currentRound.playerRolls:
-        getLogger().error(f"[{channelTag}] No roll for {characterKey} yet")
+        getLogger().error(f"{channelTag} No roll for {characterKey} yet")
         return False
 
     roll = currentRound.playerRolls[characterKey]
-    getLogger().info(f"[{channelTag}] Normalizing {roll.value} for {roll.name}.")
+    getLogger().info(f"{channelTag} Normalizing {roll.value} for {roll.name}.")
 
     # Pick the first roll so it's like we didn't do advantage at all.
     roll.value = roll.allNumbers[0]
@@ -296,7 +296,7 @@ def normalizeRoll(message):
 
 
 def getChannelTag(channel):
-    return f"{channel.guild} #{channel.name}"
+    return f"[{channel.guild} #{channel.name}]"
 
 
 with open('auth/token', mode='r') as tokenFile:
