@@ -228,7 +228,7 @@ def handlePlayerRoll(channelTag, currentRound, newRoll):
 def getCurrentRound(message, quiet = False):
     if not message.channel.id in rounds:
         if not quiet:
-            getLogger().error(f"[{getChannelTag(message.channel)}] Channel not currently rolling.")
+            getLogger().error(f"{getChannelTag(message.channel)} Channel not currently rolling.")
         return None
 
     return rounds[message.channel.id]
