@@ -164,7 +164,9 @@ async def on_message(message):
                                             key = lambda roll: roll.value,
                                             reverse = True)):
                 response.add_field(name = roll.name, value = str(roll.value), inline = False)
-                logSummary = logSummary + f"{roll.name}({roll.value}) "
+                logSummary = logSummary + f"{roll.name}({roll.value})"
+                if i < len(allRolls) - 1:
+                    logSummary = logSummary + ", "
 
             del rounds[message.channel.id]
 
