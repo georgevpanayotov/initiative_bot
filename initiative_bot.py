@@ -155,10 +155,12 @@ async def on_message(message):
             allRolls.extend(currentRound.playerRolls.values())
             allRolls.extend(currentRound.npcRolls)
 
+            pigeonImage = discord.File("images/george_method.png", filename="george_method.png")
+
             logSummary = ""
             response = Embed(title = "Initiative results.")
             response.set_footer(text = "Initiative bot. A PigeonWorks project.",
-                                icon_url = "https://i.imgur.com/96QEZeU.png")
+                                icon_url = "attachment://george_method.png")
             response.colour = discord.Colour.orange()
             for i, roll in enumerate(sorted(allRolls,
                                             key = lambda roll: roll.value,
@@ -174,12 +176,12 @@ async def on_message(message):
             if len(response.fields) == 0:
                 getLogger().warning(f"{channelTag} Summary: no rolls.")
                 response.add_field(name = "Nobody rolled", value = "", inline = False)
-                await message.channel.send(embed = response)
+                await message.channel.send(embed = response, file = pigeonImage)
 
                 return
 
             getLogger().info(f"{channelTag} Summary done: {logSummary}.")
-            await message.channel.send(embed = response)
+            await message.channel.send(embed = response, file = pigeonImage)
 
 
 def handleRoll(channelTag, currentRound, roll):
