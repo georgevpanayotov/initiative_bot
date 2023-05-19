@@ -75,7 +75,7 @@ async def on_message(message):
                 await message.channel.send(f"{nameToMention} has already rolled.")
 
     else:
-        if message.content == "/initiative":
+        if message.content == "/initiative" or message.content == "/init":
             # Initialize a rolling round.
             try:
                 currentRound = RollingRound(channelTag, message.channel.id)
@@ -97,7 +97,7 @@ async def on_message(message):
                 getLogger().error(f"{channelTag} Non-admin tried to start a round.")
                 del rounds[message.channel.id]
                 await message.channel.send(f"Only admin can do that.")
-        elif message.content == "/initiative yes":
+        elif message.content == "/initiative yes" or message.content == "/init yes":
             currentRound = getCurrentRound(message)
             if currentRound is None:
                 return
@@ -111,7 +111,8 @@ async def on_message(message):
                 del rounds[message.channel.id]
             else:
                 await message.channel.send(f"I didn't ask you!")
-        elif message.content.startswith("/initiative I am"):
+        elif (message.content.startswith("/initiative I am") or
+              message.content.startswith("/init I am")):
             currentRound = getCurrentRound(message, True)
             if currentRound is None:
                 try:
@@ -129,19 +130,22 @@ async def on_message(message):
 
             getLogger().info(f"{channelTag} {characterKey} is {message.author.name} ({userId})")
             context.setCharacter(userId, characterKey)
-        elif message.content.startswith("/initiative advantage"):
+        elif (message.content.startswith("/initiative advantage") or
+              message.content.startswith("/init advantage")):
             success = updateSecondRoll(message, SecondRoll.ADVANTAGE)
             if not success:
                 await message.channel.send(f"<@{message.author.id}> hasn't rolled yet.")
-        elif message.content.startswith("/initiative disadvantage"):
+        elif (message.content.startswith("/initiative disadvantage") or
+              message.content.startswith("/init disadvantage")):
             success = updateSecondRoll(message, SecondRoll.DISADVANTAGE)
             if not success:
                 await message.channel.send(f"<@{message.author.id}> hasn't rolled yet.")
-        elif message.content.startswith("/initiative normal"):
+        elif (message.content.startswith("/initiative normal") or
+              message.content.startswith("/init normal")):
             success = normalizeRoll(message)
             if not success:
                 await message.channel.send(f"<@{message.author.id}> hasn't rolled yet.")
-        elif message.content == "/initiative get":
+        elif message.content == "/initiative get" or message.content == "/init get":
             currentRound = getCurrentRound(message)
             if currentRound is None:
                 return
