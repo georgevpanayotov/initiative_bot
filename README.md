@@ -52,7 +52,6 @@ and
 
 As long as 2 rolls have been issued, it will update to the correct value.
 
-
 ## Instructions for DM
 
 To become admin, issue the command:
@@ -75,3 +74,7 @@ Once everyone has rolled (including any NPCs), issue this command:
 ```
 
 The bot will generate a summary of the initiative order.
+
+## Shortcut
+
+The `/initiative` command can be shortened to `/init`.
