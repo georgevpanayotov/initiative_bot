@@ -45,34 +45,7 @@ async def on_message(message):
         matchInitiative = re.compile("Initiative\([+-]?(\d*)\)")
 
         if embed.title is not None and matchInitiative.match(embed.title) is not None:
-            currentRound = getCurrentRound(message)
-            if currentRound is None:
-                return
-
-            if currentRound.context.admin() is None:
-                getLogger().error(f"{channelTag} Roll ignored before admin chosen.")
-                return
-
-            allNumbers = []
-            number = None
-            for field in embed.fields:
-                newNumber = parseNumbers(field.name)
-                if newNumber is not None:
-                    number = newNumber
-
-                allNumbers.append(parseEither(field.name))
-
-            roll = Roll(embed.author.name, number, allNumbers)
-
-            success = handleRoll(channelTag, currentRound, roll)
-            if not success:
-                userId = currentRound.context.getUserId(roll.key)
-
-                nameToMention = embed.author.name
-                if userId is not None:
-                    nameToMention = f"<@{userId}>"
-
-                await message.channel.send(f"{nameToMention} has already rolled.")
+            await handleRoll(message)
 
     else:
         if message.content == "/initiative" or message.content == "/init":
@@ -155,46 +128,48 @@ async def on_message(message):
                 await message.channel.send("Only admin can do that.")
                 return
 
-            allRolls = []
-            allRolls.extend(currentRound.playerRolls.values())
-            allRolls.extend(currentRound.npcRolls)
-
-            pigeonImage = discord.File("images/george_method.png", filename="george_method.png")
-
-            logSummary = ""
-            response = Embed(title = "Initiative results.")
-            response.set_footer(text = "Initiative bot. A PigeonWorks project.",
-                                icon_url = "attachment://george_method.png")
-            response.colour = discord.Colour.orange()
-            for i, roll in enumerate(sorted(allRolls,
-                                            key = lambda roll: roll.value,
-                                            reverse = True)):
-                response.add_field(name = roll.name, value = str(roll.value), inline = False)
-                logSummary = logSummary + f"{roll.name}({roll.value})"
-                if i < len(allRolls) - 1:
-                    logSummary = logSummary + ", "
-
-            del rounds[message.channel.id]
+            await computeInitiative(currentRound, message.channel)
 
 
-            if len(response.fields) == 0:
-                getLogger().warning(f"{channelTag} Summary: no rolls.")
-                response.add_field(name = "Nobody rolled", value = "", inline = False)
-                await message.channel.send(embed = response, file = pigeonImage)
+async def handleRoll(message):
+    embed = message.embeds[0]
+    channelTag = getChannelTag(message.channel)
+    currentRound = getCurrentRound(message)
+    if currentRound is None:
+        return
 
-                return
+    if currentRound.context.admin() is None:
+        getLogger().error(f"{channelTag} Roll ignored before admin chosen.")
+        return
 
-            getLogger().info(f"{channelTag} Summary done: {logSummary}.")
-            await message.channel.send(embed = response, file = pigeonImage)
+    allNumbers = []
+    number = None
+    for field in embed.fields:
+        newNumber = parseNumbers(field.name)
+        if newNumber is not None:
+            number = newNumber
 
+        allNumbers.append(parseEither(field.name))
 
-def handleRoll(channelTag, currentRound, roll):
+    roll = Roll(embed.author.name, number, allNumbers)
+
+    success = False
     userId = currentRound.context.getUserId(roll.key)
 
     if userId is not None:
-        return handlePlayerRoll(channelTag, currentRound, roll)
+        success = handlePlayerRoll(channelTag, currentRound, roll)
     else:
-        return handleNpcRoll(channelTag, currentRound, roll)
+        success = handleNpcRoll(channelTag, currentRound, roll)
+
+    if not success:
+        userId = currentRound.context.getUserId(roll.key)
+
+        nameToMention = embed.author.name
+        if userId is not None:
+            nameToMention = f"<@{userId}>"
+
+        await message.channel.send(f"{nameToMention} has already rolled.")
+
 
 
 def handleNpcRoll(channelTag, currentRound, roll):
@@ -301,6 +276,41 @@ def normalizeRoll(message):
     roll.value = roll.allNumbers[0]
 
     return True
+
+
+async def computeInitiative(currentRound, channel):
+    allRolls = []
+    allRolls.extend(currentRound.playerRolls.values())
+    allRolls.extend(currentRound.npcRolls)
+
+    pigeonImage = discord.File("images/george_method.png", filename="george_method.png")
+
+    logSummary = ""
+    response = Embed(title = "Initiative results.")
+    response.set_footer(text = "Initiative bot. A PigeonWorks project.",
+                        icon_url = "attachment://george_method.png")
+    response.colour = discord.Colour.orange()
+    for i, roll in enumerate(sorted(allRolls,
+                                    key = lambda roll: roll.value,
+                                    reverse = True)):
+        response.add_field(name = roll.name, value = str(roll.value), inline = False)
+        logSummary = logSummary + f"{roll.name}({roll.value})"
+        if i < len(allRolls) - 1:
+            logSummary = logSummary + ", "
+
+    del rounds[channel.id]
+
+    channelTag = getChannelTag(channel)
+
+    if len(response.fields) == 0:
+        getLogger().warning(f"{channelTag} Summary: no rolls.")
+        response.add_field(name = "Nobody rolled", value = "", inline = False)
+        await channel.send(embed = response, file = pigeonImage)
+
+        return
+
+    getLogger().info(f"{channelTag} Summary done: {logSummary}.")
+    await channel.send(embed = response, file = pigeonImage)
 
 
 def getChannelTag(channel):
