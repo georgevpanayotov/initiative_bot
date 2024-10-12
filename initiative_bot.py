@@ -42,7 +42,7 @@ async def on_message(message):
     if len(message.embeds) > 0:
         embed = message.embeds[0]
 
-        matchInitiative = re.compile("Initiative\([+-]?(\d*)\)")
+        matchInitiative = re.compile("Initiative\s*\([+-]?(\d*)\)")
 
         if embed.title is not None and matchInitiative.match(embed.title) is not None:
             await handleRoll(message)
